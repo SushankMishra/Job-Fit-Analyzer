@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agentic Job-Fit Analyzer</title>
+  <meta name="description" content="AI-powered agentic pipeline for resume and job description analysis with skill gap identification and learning resources." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="brand-icon">🤖</div>
+      <div>
+        <div class="brand-title">Job-Fit Analyzer</div>
+        <span class="brand-subtitle">Agentic AI Pipeline · MV3</span>
+      </div>
+    </div>
+    <div class="header-controls">
+      <label class="theme-toggle-label" title="Toggle Dark Mode">
+        <span id="theme-icon">☀️</span>
+        <input type="checkbox" class="theme-toggle-input" id="theme-toggle" />
+        <div class="theme-toggle-track"></div>
+      </label>
+    </div>
+  </header>
+
+  <!-- ── Tab Navigation ── -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="input-tab" id="tab-input">📄 Input</button>
+    <button class="tab-btn" data-tab="agent-tab" id="tab-agent">🧠 Agent</button>
+    <button class="tab-btn" data-tab="results-tab" id="tab-results">📊 Results</button>
+    <button class="tab-btn" data-tab="settings-tab" id="tab-settings">⚙️ Config</button>
+  </nav>
+
+  <!-- ── Scrollable Body ── -->
+  <main class="app-body">
+
+    <!-- ════════════════════════════════ INPUT TAB ════════════════════════════════ -->
+    <section class="tab-panel active" id="input-tab">
+
+      <!-- Resume Card -->
+      <div class="card">
+        <div class="card-title"><span class="icon">📄</span> Your Resume</div>
+
+        <!-- File Upload Zone -->
+        <div class="file-upload-zone" id="resume-drop-zone">
+          <div class="file-upload-icon">📂</div>
+          <div class="file-upload-text">Drop your resume here or click to browse</div>
+          <div class="file-upload-subtext">Supports PDF · DOCX · TXT (max 5MB)</div>
+          <div id="file-badge-container"></div>
+        </div>
+        <input type="file" id="resume-file-input" accept=".pdf,.docx,.txt" />
+
+        <div class="divider">OR PASTE TEXT</div>
+
+        <label class="field-label" for="resume-text">Resume Text</label>
+        <textarea id="resume-text" rows="6" placeholder="Paste your full resume here...&#10;&#10;e.g. John Doe | Software Engineer&#10;Skills: Python, JavaScript, React, SQL..."></textarea>
+        <div class="field-hint">🔒 Your data never leaves your browser. Processed locally via APIs you configure.</div>
+      </div>
+
+      <!-- Job Description Card -->
+      <div class="card">
+        <div class="card-title"><span class="icon">💼</span> Job Description</div>
+
+        <button class="scrape-btn" id="scrape-page-btn">
+          🌐 Auto-scrape from current tab
+        </button>
+
+        <textarea id="job-description" rows="6" placeholder="Paste the job description here...&#10;&#10;e.g. We are looking for a Senior Backend Engineer with experience in Python, Django, PostgreSQL, Docker and Kubernetes..."></textarea>
+        <div class="field-hint">Tip: Navigate to any job posting, then click "Auto-scrape" above.</div>
+      </div>
+
+      <!-- Run Button -->
+      <button class="btn btn-primary btn-full" id="run-agent-btn">
+        <span id="run-btn-icon">🚀</span>
+        <span id="run-btn-text">Analyze with AI Agent</span>
+      </button>
+
+    </section>
+
+    <!-- ════════════════════════════════ AGENT TAB ════════════════════════════════ -->
+    <section class="tab-panel" id="agent-tab">
+
+      <!-- Progress Steps -->
+      <div class="progress-steps" id="progress-steps">
+        <div class="progress-step" id="ps-extract-resume" data-step="0">
+          <div class="step-dot">1</div>
+          <div class="step-label">Resume</div>
+          <div class="chain-line"></div>
+        </div>
+        <div class="progress-step" id="ps-extract-job" data-step="1">
+          <div class="step-dot">2</div>
+          <div class="step-label">Job Req</div>
+        </div>
+        <div class="progress-step" id="ps-match" data-step="2">
+          <div class="step-dot">3</div>
+          <div class="step-label">Match</div>
+        </div>
+        <div class="progress-step" id="ps-resources" data-step="3">
+          <div class="step-dot">4</div>
+          <div class="step-label">Resources</div>
+        </div>
+        <div class="progress-step" id="ps-plan" data-step="4">
+          <div class="step-dot">5</div>
+          <div class="step-label">Plan</div>
+        </div>
+        <div class="progress-step" id="ps-done" data-step="5">
+          <div class="step-dot">6</div>
+          <div class="step-label">Done</div>
+        </div>
+      </div>
+
+      <!-- Running Indicator (shown during run) -->
+      <div class="running-indicator" id="running-indicator" style="display:none;">
+        <div class="running-dot"></div>
+        <span id="running-status-text">Agent thinking...</span>
+      </div>
+
+      <!-- Reasoning Chain Empty State -->
+      <div id="chain-empty" class="empty-state">
+        <div class="empty-state-icon">🧵</div>
+        <div class="empty-state-title">No agent run yet</div>
+        <div class="empty-state-desc">Go to the <strong>Input</strong> tab, fill in your resume and job description, then click <em>Analyze with AI Agent</em>.</div>
+      </div>
+
+      <!-- Reasoning Chain Log -->
+      <div class="reasoning-chain" id="reasoning-chain" style="display:none;"></div>
+
+    </section>
+
+    <!-- ════════════════════════════════ RESULTS TAB ════════════════════════════════ -->
+    <section class="tab-panel" id="results-tab">
+
+      <!-- Results Empty State -->
+      <div id="results-empty" class="empty-state">
+        <div class="empty-state-icon">📊</div>
+        <div class="empty-state-title">No results yet</div>
+        <div class="empty-state-desc">Run the agent pipeline to see your skill match analysis, learning resources, and improvement plan here.</div>
+      </div>
+
+      <!-- Results Content (hidden until populated) -->
+      <div id="results-content" style="display:none;">
+
+        <!-- Download Banner -->
+        <div class="download-row" id="download-banner">
+          <div class="download-info">
+            <div class="download-title">📥 Improvement Plan Ready</div>
+            <div class="download-desc">Download your personalized plan as a TXT file</div>
+          </div>
+          <button class="btn btn-success btn-sm" id="download-plan-btn">
+            ⬇️ Download
+          </button>
+        </div>
+
+        <!-- Match Score -->
+        <div class="card" id="score-card">
+          <div class="card-title"><span class="icon">🎯</span> Match Score</div>
+          <div class="score-ring">
+            <div class="score-circle" id="score-circle" style="--score-pct: 0%;">
+              <div class="score-value" id="score-value">0%</div>
+            </div>
+            <div class="score-label" id="score-label">Calculating...</div>
+          </div>
+        </div>
+
+        <!-- Matched Skills -->
+        <div class="card">
+          <div class="card-title"><span class="icon">✅</span> Matched Skills</div>
+          <div class="skills-grid" id="matched-skills-grid">
+          </div>
+        </div>
+
+        <!-- Missing Skills -->
+        <div class="card">
+          <div class="card-title"><span class="icon">⚠️</span> Missing Skills</div>
+          <div class="skills-grid" id="missing-skills-grid">
+          </div>
+        </div>
+
+        <!-- Learning Resources -->
+        <div class="card">
+          <div class="card-title"><span class="icon">📚</span> Learning Resources</div>
+          <div id="resources-list"></div>
+        </div>
+
+        <!-- Improvement Plan -->
+        <div class="card">
+          <div class="card-title"><span class="icon">🗺️</span> Improvement Plan</div>
+          <div class="mt-4">
+            <div class="field-label" style="margin-bottom:8px;">🔥 Priority Skills</div>
+            <div class="skills-grid" id="priority-skills-grid"></div>
+          </div>
+          <div style="margin-top:12px;">
+            <div class="field-label" style="margin-bottom:8px;">📋 Action Steps</div>
+            <div id="plan-steps-list"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════ SETTINGS TAB ════════════════════════════════ -->
+    <section class="tab-panel" id="settings-tab">
+
+      <!-- Gemini API Key -->
+      <div class="card">
+        <div class="card-title"><span class="icon">🔑</span> Gemini API Key</div>
+        <div class="field-label">Google Gemini API Key</div>
+        <div class="api-key-row">
+          <input type="password" id="gemini-api-key" placeholder="AIza..." autocomplete="off" />
+          <button class="btn btn-secondary btn-sm" id="save-gemini-key">Save</button>
+          <button class="btn btn-secondary btn-sm" id="test-gemini-btn">Test</button>
+        </div>
+        <div class="field-hint mt-4">
+          Get your key at <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent-primary)">aistudio.google.com</a>.
+          Used for all LLM reasoning steps.
+        </div>
+        <div class="mt-8">
+          <span class="api-status" id="gemini-status">
+            <span class="api-status-dot" id="gemini-dot"></span>
+            <span id="gemini-status-text">Not configured</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- YouTube API Key -->
+      <div class="card">
+        <div class="card-title"><span class="icon">📺</span> YouTube Data API</div>
+        <div class="field-label">YouTube Data API v3 Key</div>
+        <div class="api-key-row">
+          <input type="password" id="youtube-api-key" placeholder="AIza..." autocomplete="off" />
+          <button class="btn btn-secondary btn-sm" id="save-youtube-key">Save</button>
+          <button class="btn btn-secondary btn-sm" id="test-youtube-btn">Test</button>
+        </div>
+        <div class="field-hint mt-4">
+          Enable at <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" style="color:var(--accent-primary)">Google Cloud Console</a>.
+          Used for Tool 4: search_learning_resources.
+        </div>
+        <div class="mt-8">
+          <span class="api-status" id="youtube-status">
+            <span class="api-status-dot" id="youtube-dot"></span>
+            <span id="youtube-status-text">Not configured</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Agent Settings -->
+      <div class="card">
+        <div class="card-title"><span class="icon">⚙️</span> Agent Settings</div>
+
+        <div class="field-label" style="margin-bottom:6px;">Max Missing Skills to Search (YouTube)</div>
+        <div class="api-key-row">
+          <input type="number" id="max-skills-search" min="1" max="10" value="5" style="font-family:inherit;" />
+          <button class="btn btn-secondary btn-sm" id="save-agent-settings">Save</button>
+        </div>
+        <div class="field-hint mt-4">Limits YouTube API calls to save quota. Default: 5 skills max.</div>
+      </div>
+
+      <!-- Info Card -->
+      <div class="card">
+        <div class="card-title"><span class="icon">ℹ️</span> About</div>
+        <p style="font-size:11.5px;color:var(--text-secondary);line-height:1.6;">
+          <strong>Agentic Job-Fit Analyzer v1.0</strong><br/>
+          A fully agentic Chrome Extension that follows a multi-step reasoning pipeline to match your resume against job descriptions and generate a personalized skill improvement plan with YouTube learning resources.<br/><br/>
+          <span style="color:var(--text-muted);">Built for EAG V3 · Assignment 3</span>
+        </p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Scripts (order matters) -->
+  <!-- PDF.js must load FIRST so pdfjsLib is available to fileParser.js -->
+  <script src="lib/pdf.min.js"></script>
+  <script src="utils/fileParser.js"></script>
+  <script src="utils/apiClient.js"></script>
+  <script src="utils/downloadHelper.js"></script>
+  <script src="tools/resumeParser.js"></script>
+  <script src="tools/jobParser.js"></script>
+  <script src="tools/matcher.js"></script>
+  <script src="tools/youtubeAPI.js"></script>
+  <script src="tools/planGenerator.js"></script>
+  <script src="tools/exportPlan.js"></script>
+  <script src="agent/memoryStore.js"></script>
+  <script src="agent/agentController.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
