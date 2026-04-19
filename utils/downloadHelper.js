@@ -27,19 +27,32 @@ const DownloadHelper = (() => {
    * @param {string} filename - Suggested filename (e.g., 'plan.txt')
    */
   function downloadText(content, filename = 'plan.txt') {
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url  = URL.createObjectURL(blob);
+    if (typeof chrome !== 'undefined' && chrome.downloads) {
+      // Use Chrome downloads API directly with a Data URI, which guarantees the filename
+      const dataUri = 'data:text/plain;charset=utf-8,' + encodeURIComponent(content);
+      chrome.downloads.download({
+        url: dataUri,
+        filename: filename,
+        saveAs: false
+      }).catch((err) => {
+        console.warn('Chrome download failed, falling back to anchor...', err);
+        fallbackDownload(content, filename, 'text/plain;charset=utf-8');
+      });
+    } else {
+      fallbackDownload(content, filename, 'text/plain;charset=utf-8');
+    }
+  }
 
-    const anchor    = document.createElement('a');
-    anchor.href     = url;
+  function fallbackDownload(content, filename, type) {
+    const blob = new Blob([content], { type: type });
+    const url  = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
     anchor.download = filename;
     anchor.style.display = 'none';
-
     document.body.appendChild(anchor);
     anchor.click();
     document.body.removeChild(anchor);
-
-    // Release the object URL after the download is triggered
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 

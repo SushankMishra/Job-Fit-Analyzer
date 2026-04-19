@@ -53,6 +53,9 @@ const planStepsList   = document.getElementById('plan-steps-list');
 const downloadBanner  = document.getElementById('download-banner');
 const downloadPlanBtn = document.getElementById('download-plan-btn');
 
+const agentDownloadBanner = document.getElementById('agent-download-banner');
+const downloadLogsBtn     = document.getElementById('download-logs-btn');
+
 const geminiKeyInput  = document.getElementById('gemini-api-key');
 const saveGeminiBtn   = document.getElementById('save-gemini-key');
 const testGeminiBtn   = document.getElementById('test-gemini-btn');
@@ -270,6 +273,7 @@ function setRunning(running) {
 function handleAgentStep({ type, title, description, data, timestamp }) {
   chainEmpty.style.display = 'none';
   reasoningChain.style.display = 'flex';
+  agentDownloadBanner.style.display = 'flex';
 
   const entry = document.createElement('div');
   entry.className = 'chain-entry';
@@ -448,7 +452,7 @@ function scoreDescription(score) {
   return '🔴 Low match — significant gaps';
 }
 
-// ── Download Plan ─────────────────────────────────────────────────────────
+// ── Download Plan & Logs ──────────────────────────────────────────────────
 
 downloadPlanBtn.addEventListener('click', () => {
   if (!lastPlanExport) {
@@ -458,6 +462,33 @@ downloadPlanBtn.addEventListener('click', () => {
   const content = ExportPlan.formatAsText(lastPlanExport);
   DownloadHelper.downloadText(content, 'job-fit-improvement-plan.txt');
   showToast('Plan downloaded!', 'success');
+});
+
+downloadLogsBtn.addEventListener('click', () => {
+  const steps = MemoryStore.getSteps();
+  if (!steps || steps.length === 0) {
+    showToast('No agent logs available yet.', 'info');
+    return;
+  }
+  
+  let formattedText = "══════════════════════════════════════════════════════════════\n";
+  formattedText += "          AGENTIC JOB-FIT ANALYZER — LLM LOGS\n";
+  formattedText += "══════════════════════════════════════════════════════════════\n\n";
+  
+  steps.forEach((step, i) => {
+    formattedText += `[${formatTime(step.timestamp)}] STEP ${i+1}: ${step.title}\n`;
+    formattedText += `Type: ${step.type.toUpperCase()}\n`;
+    if (step.description) {
+      formattedText += `Description: ${step.description}\n`;
+    }
+    if (step.data && Object.keys(step.data).length > 0) {
+      formattedText += `Data:\n${JSON.stringify(step.data, null, 2)}\n`;
+    }
+    formattedText += "\n──────────────────────────────────────────────────────────────\n\n";
+  });
+
+  DownloadHelper.downloadText(formattedText, 'agent_reasoning_logs.txt');
+  showToast('LLM Logs downloaded as TXT!', 'success');
 });
 
 // ── API Key Management ─────────────────────────────────────────────────────
@@ -547,6 +578,7 @@ function clearResults() {
 function clearChainLog() {
   reasoningChain.innerHTML   = '';
   reasoningChain.style.display = 'none';
+  agentDownloadBanner.style.display = 'none';
   chainEmpty.style.display   = 'block';
 }
 
